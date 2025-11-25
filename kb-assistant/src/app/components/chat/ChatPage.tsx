@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { LogOut, Send, MessageSquare } from 'lucide-react';
+import FormatText from './FormatText';
 
 interface Message {
   id: string;
@@ -65,6 +66,7 @@ export function ChatPage({ username, onLogout }: ChatPageProps) {
           id: msg.id,
           role: msg.role,
           content: msg.content,
+          citations: msg.sources ? msg.sources.map((url: string, i: number) => ({ url, label: `Source ${i+1}` })) : undefined
         }));
         setChatSessions(prev =>
           prev.map(session =>
@@ -179,7 +181,7 @@ export function ChatPage({ username, onLogout }: ChatPageProps) {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <h2 className="text-indigo-600">
-          {chatSessions.find(s => s.id === activeSessionId)?.title || 'Travel Assist'}
+          {chatSessions.find(s => s.id === activeSessionId)?.title || 'New Chat'}
         </h2>
         <div className="flex items-center gap-4">
           <span className="text-gray-700">{username}</span>
@@ -201,17 +203,19 @@ export function ChatPage({ username, onLogout }: ChatPageProps) {
             {chatSessions.find(s => s.id === activeSessionId)?.messages.map((message) => (
               <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-2xl px-4 py-3 rounded-lg ${message.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-800 border border-gray-200'}`}>
-                  {message.content}
+                  <FormatText text={message.content} />
                   {message.citations && message.citations.length > 0 && (
-                    <ul className="text-sm text-gray-500 mt-1">
+                    <div className="text-sm text-gray-500 mt-1">
+                      <span>Sources: </span>
                       {message.citations.map((c, idx) => (
-                        <li key={idx}>
+                        <span key={idx}>
                           <a href={c.url} target="_blank" rel="noreferrer" className="underline">
                             {c.label}
                           </a>
-                        </li>
+                          {idx < message.citations.length - 1 && <span>, </span>}
+                        </span>
                       ))}
-                    </ul>
+                    </div>
                   )}
                 </div>
               </div>
