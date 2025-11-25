@@ -44,18 +44,12 @@ export default function App() {
     setCurrentPage('landing');
   };
 
-  const handleTryChat = () => {
-    setUser({ username: 'Guest' });
-    setCurrentPage('chat');
-  };
-
   return (
     <div className="min-h-screen">
       {currentPage === 'landing' && (
         <LandingPage
           onLogin={() => setCurrentPage('login')}
           onRegister={() => setCurrentPage('register')}
-          onTryChat={handleTryChat}
         />
       )}
       {currentPage === 'login' && (

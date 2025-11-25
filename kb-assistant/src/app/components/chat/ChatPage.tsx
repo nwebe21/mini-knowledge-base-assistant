@@ -204,7 +204,7 @@ export function ChatPage({ username, onLogout }: ChatPageProps) {
               <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-2xl px-4 py-3 rounded-lg ${message.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-800 border border-gray-200'}`}>
                   <FormatText text={message.content} />
-                  {message.citations && message.citations.length > 0 && (
+                  {message.citations && message.citations!.length > 0 && (
                     <div className="text-sm text-gray-500 mt-1">
                       <span>Sources: </span>
                       {message.citations.map((c, idx) => (
@@ -212,7 +212,7 @@ export function ChatPage({ username, onLogout }: ChatPageProps) {
                           <a href={c.url} target="_blank" rel="noreferrer" className="underline">
                             {c.label}
                           </a>
-                          {idx < message.citations.length - 1 && <span>, </span>}
+                          {idx < message.citations!.length - 1 && <span>, </span>}
                         </span>
                       ))}
                     </div>
