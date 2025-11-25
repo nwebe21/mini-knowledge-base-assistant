@@ -23,24 +23,30 @@ export async function POST(req: NextRequest) {
             .eq("session_id", currentSessionId)
             .order("created_at", { ascending: true });
 
-        // RAG vector search
-        const embeddings = await embedText([question]);
-        const index = getIndex();
-        const query = await index.query({
-            vector: embeddings[0],
-            topK: 5,
-            includeMetadata: true,
-        });
-        const context = query.matches
-            ?.map((m, i) => `Source ${i + 1}: ${m.metadata?.text}`)
-            .join("\n\n") || "";
-        const sources = Array.from(new Set(query.matches?.map(match => match.metadata?.source_url).filter(Boolean)));
+        let context: string = '';
+        let sources: Array<any> = [];
+
+        if (!isPureGreeting(question)) {
+            // RAG vector search
+            const embeddings = await embedText([question]);
+            const index = getIndex();
+            const query = await index.query({
+                vector: embeddings[0],
+                topK: 5,
+                includeMetadata: true,
+            });
+            context = query.matches
+                ?.map((m, i) => `Source ${i + 1}: ${m.metadata?.text}`)
+                .join("\n\n") || "";
+            sources = Array.from(new Set(query.matches?.map(match => match.metadata?.source_url).filter(Boolean)));
+            console.log('###########', query)
+        }
 
         // Prepare prompt for AI using sources.label to determine role
         const messagesForPrompt = [
             {
                 role: "system",
-                content: "You are a helpful travel assistant. Strictly cite sources from the RAG context only. If unknown, say: 'I checked the available sources in the knowledge base, but none of them contain information that directly answers your question.'"
+                content: "You are a helpful travel assistant. Strictly cite sources from the RAG context only. If unknown, say: 'I checked the available sources in the knowledge base, but none of them contain information that directly answers your question.' However, if its just a greetings"
             },
 
             ...(history || []).map(h => ({
@@ -58,6 +64,7 @@ export async function POST(req: NextRequest) {
             model: "gpt-4o-mini",
             messages: messagesForPrompt,
         });
+        console.log('completion', completion);
 
         const answer = completion.choices[0].message.content;
         console.log('answer', answer);
@@ -123,4 +130,14 @@ export async function GET(req: NextRequest) {
         console.error("GET /api/chat Error:", err);
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
+}
+
+function isPureGreeting(text: string) {
+    const greetings = ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", 'how are you'];
+
+    // Lowercase, trim, and remove punctuation
+    const cleaned = text.toLowerCase().trim().replace(/[.,!?]/g, "");
+
+    // Check if it exactly matches a greeting
+    return greetings.includes(cleaned);
 }
