@@ -1,59 +1,101 @@
-import { fetchAndExtractText } from "@/lib/scraper";
-import { chunkTextByChars } from "@/lib/chunker";
+import { NextResponse } from "next/server";
 import { embedText } from "@/lib/openai";
 import { getIndex } from "@/lib/pinecone";
-import crypto from "crypto";
+import * as cheerio from "cheerio";
 
-const TARGETS = [
-    { url: "https://www.shermanstravel.com/cruise-destinations/alaska-itineraries", label: "Alaska" },
-    { url: "https://www.shermanstravel.com/cruise-destinations/caribbean-and-bahamas", label: "Caribbean & Bahamas" },
-    { url: "https://www.shermanstravel.com/cruise-destinations/hawaiian-islands", label: "Hawaiian Islands" },
-    { url: "https://www.shermanstravel.com/cruise-destinations/northern-europe", label: "Northern Europe" },
+const PAGES = [
+    {
+        url: "https://www.shermanstravel.com/cruise-destinations/alaska-itineraries",
+        label: "alaska",
+    },
+    {
+        url: "https://www.shermanstravel.com/cruise-destinations/caribbean-and-bahamas",
+        label: "caribbean-and-bahamas",
+    },
+    {
+        url: "https://www.shermanstravel.com/cruise-destinations/hawaiian-islands",
+        label: "hawaii",
+    },
+    {
+        url: "https://www.shermanstravel.com/cruise-destinations/northern-europe",
+        label: "northern-europe",
+    },
 ];
 
-export async function POST() {
+// Simple chunking helper
+function chunk(text: string, size = 400) {
+    const words = text.split(" ");
+    const chunks = [];
+    for (let i = 0; i < words.length; i += size) {
+    chunks.push(words.slice(i, i + size).join(" "));
+    }
+    return chunks;
+    }
+
+    export async function POST() {
     try {
-        const index = getIndex();
-        const upserts: any[] = [];
+    const index = getIndex();
+    const vectors: any[] = [];
 
-        for (const t of TARGETS) {
-            const text = await fetchAndExtractText(t.url);
-            const chunks = chunkTextByChars(text, 1500);
+    for (const page of PAGES) {
+        // Fetch the page
+        const html = await fetch(page.url).then((res) => {
+        if (!res.ok) throw new Error(`Failed to fetch ${page.url}: ${res.status}`);
+        return res.text();
+        });
 
-            // Delete old vectors by url
-            try {
-                await index.delete({
-                    deleteAll: false,
-                    filter: { url: t.url },
-                });
-            } catch (err) {
-                console.warn(`No existing vectors to delete for URL ${t.url}`);
-            }
+        const $ = cheerio.load(html);
 
-            const ids = chunks.map((_, i) =>
-                crypto.createHash("sha256").update(t.url + "||" + i).digest("hex")
-            );
-            const embeddings = await embedText(chunks);
+        // Extract text using multiple selectors for robustness
+        const text = $("main, article, .content").text().replace(/\s+/g, " ").trim();
+        console.log(`Scraped text length for ${page.url}:`, text.length);
 
-            const vectors = embeddings.map((emb, i) => ({
-                id: ids[i],
-                values: emb,
-                metadata: { url: t.url, label: t.label, chunk_index: i, text: chunks[i].slice(0, 1000) },
-            }));
-
-            const BATCH = 100;
-            for (let i = 0; i < vectors.length; i += BATCH) {
-                await index.upsert({
-                    vectors: vectors.slice(i, i + BATCH),
-                });
-            }
-
-            upserts.push({ url: t.url, chunks: chunks.length });
+        if (!text) {
+        console.warn(`No text found for ${page.url}, skipping.`);
+        continue;
         }
 
-        return new Response(JSON.stringify({ ok: true, upserts }), { status: 200 });
-    } catch (err) {
-        console.error(err);
-        return new Response(JSON.stringify({ error: String(err) }), { status: 500 });
+        // Chunk the text
+        const rawChunks = chunk(text);
+        const chunks = rawChunks.filter((c) => c.trim().length > 0);
+        console.log(`Chunks found for ${page.url}:`, chunks.length);
+
+        if (chunks.length === 0) {
+        console.warn(`No valid chunks for ${page.url}, skipping.`);
+        continue;
+        }
+
+        // Embed chunks
+        const embeddings = await embedText(chunks);
+
+        // Build Pinecone vectors
+        chunks.forEach((ch, i) => {
+        vectors.push({
+            id: `${page.label}-${i}`,
+            values: embeddings[i],
+            metadata: {
+            text: ch,
+            source_url: page.url,
+            },
+        });
+        });
+    }
+
+    // Check if there are vectors before upserting
+    if (vectors.length === 0) {
+        console.error("No vectors to upsert. Scraping failed or pages returned empty content.");
+        return NextResponse.json(
+        { error: "No vectors to upsert. Check scraping logic." },
+        { status: 500 }
+        );
+    }
+
+    // Insert into Pinecone
+    await index.upsert(vectors);
+
+    return NextResponse.json({ inserted: vectors.length });
+    } catch (err: any) {
+    console.error(err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
     }
 }
