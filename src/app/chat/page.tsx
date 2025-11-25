@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { LogOut, Send, MessageSquare, X, Menu } from 'lucide-react';
 import FormatText from './FormatText';
 
@@ -17,12 +18,10 @@ interface ChatSession {
   messages: Message[];
 }
 
-interface ChatPageProps {
-  username: string;
-  onLogout: () => void;
-}
-
-export function ChatPage({ username, onLogout }: ChatPageProps) {
+export function ChatPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const username = searchParams.get("username") || "";
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
@@ -30,11 +29,15 @@ export function ChatPage({ username, onLogout }: ChatPageProps) {
   const [isAssistantTyping, setIsAssistantTyping] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Load userId and sessions on mount
+  // Redirect to landing if no userId, prevent access to login/register/landing after login
   useEffect(() => {
-    const storedUserId = localStorage.getItem("userId");
-    setUserId(storedUserId);
-    if (storedUserId) fetchSessions(storedUserId);
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      router.replace('/');
+    } else {
+      setUserId(userId);
+      fetchSessions(userId);
+    }
   }, []);
 
   // Fetch all sessions for the user (without messages)
@@ -179,6 +182,12 @@ export function ChatPage({ username, onLogout }: ChatPageProps) {
     setIsSidebarOpen(false);
   };
 
+  // Logout handler
+  const handleLogout = () => {
+    localStorage.clear();
+    router.replace('/');
+  };
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
@@ -188,12 +197,8 @@ export function ChatPage({ username, onLogout }: ChatPageProps) {
         </h2>
         <div className="flex items-center gap-4">
           <span className="text-gray-700">{username}</span>
-          <button
-            onClick={onLogout}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-          >
+          <button onClick={handleLogout} aria-label="Logout" className="text-gray-700 hover:text-red-600 transition-colors">
             <LogOut className="w-5 h-5" />
-            Logout
           </button>
         </div>
       </div>
@@ -265,30 +270,35 @@ export function ChatPage({ username, onLogout }: ChatPageProps) {
 
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col">
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-            {chatSessions.find(s => s.id === activeSessionId)?.messages.map((message) => (
-              <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-full sm:max-w-2xl px-4 py-3 rounded-lg ${message.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-800 border border-gray-200'}`}>
-                  <FormatText text={message.content} />
-                  {message.citations && message.citations!.length > 0 && (
-                    <div className="text-sm text-gray-500 mt-1">
-                      <span>Sources: </span>
-                      {message.citations.map((c, idx) => (
-                        <span key={idx}>
-                          <a href={c.url} target="_blank" rel="noreferrer" className="underline">
-                            {c.label}
-                          </a>
-                          {idx < message.citations!.length - 1 && <span>, </span>}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+          {/* Messages / Placeholder */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col justify-center items-center">
+            {activeSessionId ? (
+              chatSessions.find(s => s.id === activeSessionId)?.messages.map((message) => (
+                <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}>
+                  <div className={`max-w-full sm:max-w-2xl px-4 py-3 rounded-lg ${message.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-800 border border-gray-200'}`}>
+                    <FormatText text={message.content} />
+                    {message.citations && message.citations!.length > 0 && (
+                      <div className="text-sm text-gray-500 mt-1">
+                        <span>Sources: </span>
+                        {message.citations.map((c, idx) => (
+                          <span key={idx}>
+                            <a href={c.url} target="_blank" rel="noreferrer" className="underline">{c.label}</a>
+                            {idx < message.citations!.length - 1 && <span>, </span>}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="text-gray-500 text-center px-4 sm:px-0">
+                <p className="text-lg">Hey! What travel questions can I help you with today?</p>
               </div>
-            ))}
-            {isAssistantTyping && (
-              <div className="flex justify-start">
+            )}
+
+            {isAssistantTyping && activeSessionId && (
+              <div className="flex justify-start w-full">
                 <div className="max-w-full sm:max-w-2xl px-4 py-3 rounded-lg bg-white text-gray-500 border border-gray-200 italic">
                   Assistant is typing...
                 </div>
@@ -316,3 +326,5 @@ export function ChatPage({ username, onLogout }: ChatPageProps) {
     </div>
   );
 }
+
+export default ChatPage;

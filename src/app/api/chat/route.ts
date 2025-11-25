@@ -46,7 +46,8 @@ export async function POST(req: NextRequest) {
         const messagesForPrompt = [
             {
                 role: "system",
-                content: "You are a helpful travel assistant. Strictly cite sources from the RAG context only. If unknown, say: 'I checked the available sources in the knowledge base, but none of them contain information that directly answers your question.' However, if its just a greetings"
+                content: "You are a helpful travel assistant. Strictly cite sources from the RAG context only." +
+                " If unknown, say: 'I checked the available sources in the knowledge base, but none of them contain information that directly answers your question.'"
             },
 
             ...(history || []).map(h => ({
@@ -72,6 +73,9 @@ export async function POST(req: NextRequest) {
         console.log('user_id', userId);
         console.log('sources', sources);
         console.log('session_id', currentSessionId);
+
+        const noAnswerFlag = answer?.includes('none of them contain information that directly answers your question');
+
         // Store both user and assistant messages (table has only session_id, content, sources)
         const { error: insertError } = await supabase.from("chat_messages").insert([
             {
@@ -85,7 +89,7 @@ export async function POST(req: NextRequest) {
                 user_id: userId,
                 content: answer,
                 role: 'assistant',
-                sources: sources
+                sources: noAnswerFlag ? [] : sources
             }
         ]);
 
