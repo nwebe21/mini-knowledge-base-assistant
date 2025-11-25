@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { LogOut, Send, MessageSquare } from 'lucide-react';
+import { LogOut, Send, MessageSquare, X, Menu } from 'lucide-react';
 import FormatText from './FormatText';
 
 interface Message {
@@ -28,6 +28,7 @@ export function ChatPage({ username, onLogout }: ChatPageProps) {
   const [inputValue, setInputValue] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
   const [isAssistantTyping, setIsAssistantTyping] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Load userId and sessions on mount
   useEffect(() => {
@@ -83,6 +84,7 @@ export function ChatPage({ username, onLogout }: ChatPageProps) {
   const handleNewChat = async () => {
     if (!userId) return;
     setActiveSessionId(null);
+    setIsSidebarOpen(false);
   };
 
   // Send a message (and create session if none active)
@@ -174,6 +176,7 @@ export function ChatPage({ username, onLogout }: ChatPageProps) {
   const handleSelectSession = (sessionId: string) => {
     setActiveSessionId(sessionId);
     fetchMessages(sessionId);
+    setIsSidebarOpen(false);
   };
 
   return (
@@ -195,60 +198,43 @@ export function ChatPage({ username, onLogout }: ChatPageProps) {
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col">
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
-            {chatSessions.find(s => s.id === activeSessionId)?.messages.map((message) => (
-              <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-2xl px-4 py-3 rounded-lg ${message.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-800 border border-gray-200'}`}>
-                  <FormatText text={message.content} />
-                  {message.citations && message.citations!.length > 0 && (
-                    <div className="text-sm text-gray-500 mt-1">
-                      <span>Sources: </span>
-                      {message.citations.map((c, idx) => (
-                        <span key={idx}>
-                          <a href={c.url} target="_blank" rel="noreferrer" className="underline">
-                            {c.label}
-                          </a>
-                          {idx < message.citations!.length - 1 && <span>, </span>}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-            {isAssistantTyping && (
-              <div className="flex justify-start">
-                <div className="max-w-2xl px-4 py-3 rounded-lg bg-white text-gray-500 border border-gray-200 italic">
-                  Assistant is typing...
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Input Area */}
-          <div className="border-t border-gray-200 bg-white p-4">
-            <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto flex gap-2">
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Ask a travel question..."
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
-              />
-              <button type="submit" className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
-                <Send className="w-5 h-5" />
-              </button>
-            </form>
-          </div>
+      <div className="flex flex-col sm:flex-row flex-1 overflow-hidden">
+        {/* Sidebar toggle buttons on small screens */}
+        <div className="sm:hidden bg-white border-b border-gray-200 p-2 flex justify-between items-center">
+          {!isSidebarOpen && (
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors"
+              aria-label="Open Chats"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+          )}
+          {isSidebarOpen && (
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors"
+              aria-label="Close Chats"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          )}
         </div>
 
         {/* Chat session Sidebar */}
-        <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
-          <div className="p-4 border-b border-gray-200">
+        <div className={`w-full sm:w-80 bg-white border-l border-gray-200 flex flex-col transition-transform duration-300 ease-in-out
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} sm:translate-x-0 sm:static fixed top-0 bottom-0 z-20`}>
+          {/* Close button inside sidebar for small screens */}
+          <div className="sm:hidden flex justify-end p-2">
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors"
+              aria-label="Close Chats"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          <div className="p-4 border-b border-gray-200 hidden sm:block">
             <button onClick={handleNewChat} className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
               + New Chat
             </button>
@@ -268,6 +254,62 @@ export function ChatPage({ username, onLogout }: ChatPageProps) {
                 <span className="truncate">{session.title}</span>
               </button>
             ))}
+          </div>
+          {/* Add + New Chat button visible for small screens inside sidebar */}
+          <div className="p-4 border-t border-gray-200 sm:hidden">
+            <button onClick={handleNewChat} className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+              + New Chat
+            </button>
+          </div>
+        </div>
+
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col">
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+            {chatSessions.find(s => s.id === activeSessionId)?.messages.map((message) => (
+              <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-full sm:max-w-2xl px-4 py-3 rounded-lg ${message.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-800 border border-gray-200'}`}>
+                  <FormatText text={message.content} />
+                  {message.citations && message.citations!.length > 0 && (
+                    <div className="text-sm text-gray-500 mt-1">
+                      <span>Sources: </span>
+                      {message.citations.map((c, idx) => (
+                        <span key={idx}>
+                          <a href={c.url} target="_blank" rel="noreferrer" className="underline">
+                            {c.label}
+                          </a>
+                          {idx < message.citations!.length - 1 && <span>, </span>}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+            {isAssistantTyping && (
+              <div className="flex justify-start">
+                <div className="max-w-full sm:max-w-2xl px-4 py-3 rounded-lg bg-white text-gray-500 border border-gray-200 italic">
+                  Assistant is typing...
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Input Area */}
+          <div className="border-t border-gray-200 bg-white p-4">
+            <form onSubmit={handleSendMessage} className="max-w-full sm:max-w-4xl mx-auto flex gap-2">
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Ask a travel question..."
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
+              />
+              <button type="submit" className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
+                <Send className="w-5 h-5" />
+              </button>
+            </form>
           </div>
         </div>
       </div>
