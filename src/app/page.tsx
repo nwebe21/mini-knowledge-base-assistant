@@ -44,6 +44,10 @@ export default function Page() {
 
             {/* Hero Section */}
             <div className="flex-1 flex flex-col justify-center items-center px-4 sm:px-6 md:px-8 text-center w-full max-w-full">
+                <img
+                    src="/illustration-travel.png"
+                    className="w-full max-w-md mb-8 mx-auto"
+                />
                 <h2 className="text-white text-5xl font-bold mb-6 max-w-full break-words">
                     Plan Your Perfect Journey
                 </h2>

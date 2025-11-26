@@ -31,6 +31,7 @@ export default function ChatPage() {
     const [inputValue, setInputValue] = useState('');
     const [isAssistantTyping, setIsAssistantTyping] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const verifySession = async () => {
@@ -45,7 +46,15 @@ export default function ChatPage() {
   useEffect(() => {
     if (!user) return; // wait for user context to load
     fetchSessions();
-}, [user]);
+  }, [user]);
+
+  useEffect(() => {
+    if (!messagesEndRef.current) return;
+    const container = messagesEndRef.current;
+
+    // Scroll to bottom smoothly
+    container.scrollTop = container.scrollHeight;
+  }, [chatSessions, isAssistantTyping]);
 
   // Fetch all sessions for the user (without messages)
   const fetchSessions = async () => {
@@ -407,7 +416,6 @@ export default function ChatPage() {
             <div>
               <h2 className="font-bold text-gray-900 text-lg max-w-xs truncate">{chatSessions.find(s => s.id === activeSessionId)?.title || 'New Chat'}</h2>
               <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                <span className="bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-medium">● Online</span>
                 <span>AI Travel Assistant</span>
               </div>
             </div>
@@ -422,7 +430,7 @@ export default function ChatPage() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-4">
+        <div className="flex-1 p-4 overflow-y-auto space-y-4" ref={messagesEndRef}>
           { chatSessions.find(s => s.id === activeSessionId)?.messages.map((msg) => (
             <div
               key={msg.id}
@@ -431,7 +439,7 @@ export default function ChatPage() {
               }`}
             >
               <div
-                className={`w-10 h-10 flex items-center justify-center rounded-full ${
+                className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full ${
                   msg.role === "user" ? "bg-indigo-600 text-white" : "bg-gradient-to-br from-indigo-500 to-purple-600 text-white"
                 } font-bold`}
               >
@@ -469,6 +477,7 @@ export default function ChatPage() {
               </div>
             </div>
           )}
+          <div id="bottom-anchor" />
         </div>
 
         {/* Input */}

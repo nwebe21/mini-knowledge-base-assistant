@@ -19,6 +19,9 @@ export const getSupabaseBrowserClient = () => {
     browserSupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
     if (!authListenerBound) {
       browserSupabaseClient.auth.onAuthStateChange(async (event, session) => {
+        // Only run callback when the page is loaded/refreshed
+        if (event !== "INITIAL_SESSION") return;
+
         try {
           await fetch("/api/auth/callback", {
             method: "POST",
@@ -29,6 +32,7 @@ export const getSupabaseBrowserClient = () => {
           console.error("Failed syncing auth state to server:", error);
         }
       });
+
       authListenerBound = true;
     }
   }
