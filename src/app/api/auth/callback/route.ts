@@ -6,6 +6,7 @@ type SupabaseServerClient = Awaited<
 >;
 
 
+
 export async function POST(req: NextRequest) {
   try {
     const { event, session } = await req.json();

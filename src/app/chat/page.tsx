@@ -59,8 +59,10 @@ export default function ChatPage() {
   // Fetch all sessions for the user (without messages)
   const fetchSessions = async () => {
     try {
+      console.log('nisulod here');
       const res = await fetch(`/api/session?userId=${userId}`);
       const data = await res.json();
+      console.log('data sessions', data)
       if (data.sessions) {
         const sessions: ChatSession[] = data.sessions.map((session: any) => ({
           id: session.id,
