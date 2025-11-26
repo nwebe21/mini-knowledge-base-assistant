@@ -1,50 +1,67 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Plane } from "lucide-react";
 import { useEffect } from "react";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
-export default function Page() {  // <-- default export
+export default function Page() {
     const router = useRouter();
+    const supabase = getSupabaseBrowserClient();
 
     useEffect(() => {
-        const username = localStorage.getItem("username");
-        if (username) {
-            router.replace(`/chat?username=${encodeURIComponent(username)}`);
-        }
-    }, [router]);
-
-    const handleLogin = () => router.push("/login");
-    const handleRegister = () => router.push("/register");
+        const checkSession = async () => {
+            const { data } = await supabase.auth.getSession();
+            if (data.session) {
+                router.replace("/chat");
+            }
+        };
+        checkSession();
+    }, [router, supabase]);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-            <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-8 md:p-12">
-                <div className="flex items-center justify-center mb-6">
-                    <Plane className="w-12 h-12 text-indigo-600 mr-3" />
-                    <h1 className="text-indigo-600">Travel Assist</h1>
-                </div>
+        <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-500 to-purple-600 overflow-x-hidden w-full sm:min-h-screen sm:flex sm:flex-col sm:bg-gradient-to-br sm:from-indigo-500 sm:to-purple-600 sm:overflow-x-hidden sm:w-full flex-1 p-4 overflow-y-auto space-y-4 sm:flex-none sm:p-0 sm:overflow-y-visible sm:space-y-0">
+            {/* Top Navbar */}
+            <div className="w-full max-w-full p-8 flex flex-col items-center sm:flex-row sm:justify-between sm:items-center px-4 sm:px-8 gap-4">
+                <h1 className="text-white text-2xl sm:text-3xl md:text-4xl font-bold break-words text-center sm:text-left w-full sm:w-auto">
+                    ✈️ Travel Assistant
+                </h1>
 
-                <p className="text-gray-700 text-center mb-8 max-w-lg mx-auto">
-                    Plan smarter and explore better with AI-powered answers from trusted travel guides. 
-                    Ask about destinations, cruises, or itineraries, and get responses backed by real travel sources. 
-                    Register to save your chat history and keep all your travel insights in one place.
+                <div className="flex justify-center w-full max-w-xs sm:justify-end">
+                    <button
+                        onClick={() => router.push("/login")}
+                        className="px-6 py-3 bg-white text-indigo-600 font-semibold rounded-lg hover:shadow-md transition text-center w-full sm:w-auto"
+                    >
+                        Login
+                    </button>
+                </div>
+            </div>
+
+            {/* Hero Section */}
+            <div className="flex-1 flex flex-col justify-center items-center px-4 sm:px-6 md:px-8 text-center w-full max-w-full">
+                <img
+                    src="/illustration-travel.png"
+                    className="w-full max-w-md mb-8 mx-auto"
+                />
+                <h2 className="text-white text-5xl font-bold mb-6 max-w-full break-words">
+                    Plan Your Perfect Journey
+                </h2>
+
+                <p className="text-white/80 text-lg max-w-2xl mb-10 px-2 sm:px-0 break-words">
+                    Get personalized travel recommendations, discover hidden gems,
+                    and plan unforgettable adventures with your AI travel companion.
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button
-                        onClick={handleRegister}
-                        className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                    >
-                        Register
-                    </button>
-                    <button
-                        onClick={handleLogin}
-                        className="px-6 py-3 bg-white text-indigo-600 border-2 border-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
-                    >
-                    Login
-                        </button>
-                </div>
+                <button
+                    onClick={() => router.push("/register")}
+                    className="px-10 py-4 bg-white text-indigo-600 rounded-xl text-lg font-semibold shadow-md hover:-translate-y-1 transition-transform min-w-[180px] max-w-full w-full sm:w-auto"
+                >
+                    Start Chatting
+                </button>
+            </div>
+
+            {/* Footer tagline */}
+            <div className="w-full p-6 text-center text-white/70 text-sm max-w-full px-4 sm:px-0">
+                Your AI-powered travel companion
             </div>
         </div>
     );
