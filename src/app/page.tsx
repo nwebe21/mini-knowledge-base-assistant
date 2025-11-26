@@ -26,18 +26,12 @@ export default function Page() {
                     ✈️ Travel Assistant
                 </h1>
 
-                <div className="flex gap-4 flex-wrap justify-center w-full max-w-xs sm:justify-end">
+                <div className="flex justify-center w-full max-w-xs sm:justify-end">
                     <button
                         onClick={() => router.push("/login")}
-                        className="flex-1 min-w-[100px] px-6 py-3 bg-white/20 text-white font-medium rounded-lg hover:bg-white/30 transition text-center"
+                        className="px-6 py-3 bg-white text-indigo-600 font-semibold rounded-lg hover:shadow-md transition text-center w-full sm:w-auto"
                     >
                         Login
-                    </button>
-                    <button
-                        onClick={() => router.push("/register")}
-                        className="flex-1 min-w-[100px] px-6 py-3 bg-white text-indigo-600 font-semibold rounded-lg hover:shadow-md transition text-center"
-                    >
-                        Sign Up
                     </button>
                 </div>
             </div>

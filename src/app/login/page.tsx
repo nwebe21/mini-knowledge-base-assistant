@@ -76,7 +76,7 @@ export default function LoginPage() {
                 <div className="bg-white rounded-2xl p-6 sm:p-10 w-full max-w-md shadow-2xl overflow-auto">
                     <div className="text-center mb-8">
                         <h2 className="text-3xl font-bold text-gray-800">Welcome Back</h2>
-                        <p className="text-gray-500">Sign in to continue your journey</p>
+                        <p className="text-gray-500">Sign in to continue your AI adventure</p>
                     </div>
 
                     {error && (
@@ -92,7 +92,7 @@ export default function LoginPage() {
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                className="w-full border-2 border-gray-200 px-4 py-2 rounded-lg focus:border-indigo-500 text-black"
+                                className="w-full border-2 border-gray-200 px-4 py-2 rounded-lg focus:border-indigo-500 text-gray-700"
                                 required
                             />
                         </div>
@@ -104,7 +104,7 @@ export default function LoginPage() {
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full border border-gray-300 rounded px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full border border-gray-300 rounded px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-700"
                                     required
                                 />
                                 <button
@@ -127,7 +127,7 @@ export default function LoginPage() {
                     </form>
 
                     <p className="text-center text-gray-500 text-sm mt-6">
-                        Don’t have an account?{' '}
+                        Don’t have an account?{" "}
                         <span
                             className="text-indigo-600 font-semibold cursor-pointer hover:underline"
                             onClick={() => router.push("/register")}

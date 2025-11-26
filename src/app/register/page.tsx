@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { usernameToEmail } from "@/lib/auth-utils";
 
 
-function RegisterPage() {
+export default function RegisterPage() {
     const router = useRouter();
     const supabase = getSupabaseBrowserClient();
     const [fullName, setFullName] = useState("");
@@ -71,76 +71,94 @@ function RegisterPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#667eea] to-[#764ba2] p-4 w-full overflow-x-hidden overflow-y-auto">
-            <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-auto">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2 text-center">Create Account</h2>
-                <p className="text-gray-500 mb-6 text-center">Start your travel adventure today</p>
+        <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-500 to-purple-600 overflow-x-hidden overflow-y-auto">
+            {/* Back Button */}
+            <div className="w-full p-8">
+                <button
+                    onClick={() => router.push("/")}
+                    className="flex items-center gap-2 bg-white/20 text-white px-4 py-2 rounded-lg hover:bg-white/30 transition w-max"
+                >
+                    <ArrowLeft className="w-5 h-5" />
+                    Back
+                </button>
+            </div>
 
-                { error && (<div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>) }
-
-                <form onSubmit={handleRegister} className="space-y-4">
-                    <div className="flex flex-col">
-                        <label className="text-gray-700 font-medium mb-1">Full Name</label>
-                        <input
-                            type="text"
-                            value={fullName}
-                            onChange={(e) => setFullName(e.target.value)}
-                            className="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            required
-                        />
+            {/* Form Container */}
+            <div className="flex-1 flex justify-center items-center px-4 min-w-0">
+                <div className="bg-white rounded-2xl p-6 sm:p-10 w-full max-w-md shadow-2xl overflow-auto">
+                    <div className="text-center mb-8">
+                        <h2 className="text-3xl font-bold text-gray-800">Create Account</h2>
+                        <p className="text-gray-500">Sign up and let AI guide your adventure</p>
                     </div>
 
-                    <div className="flex flex-col">
-                        <label className="text-gray-700 font-medium mb-1">Username</label>
-                        <input
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            className="border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            required
-                        />
-                    </div>
+                    {error && (
+                        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+                            {error}
+                        </div>
+                    )}
 
-                    <div className="flex flex-col">
-                        <label className="text-gray-700 font-medium mb-1">Password</label>
-                        <div className="relative flex items-center w-full">
+                    <form onSubmit={handleRegister} className="space-y-6">
+                        <div>
+                            <label className="block text-gray-700 mb-2">Full Name</label>
                             <input
-                                type={showPassword ? "text" : "password"}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="w-full border border-gray-300 rounded px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                type="text"
+                                value={fullName}
+                                onChange={(e) => setFullName(e.target.value)}
+                                className="w-full border-2 border-gray-200 px-4 py-2 rounded-lg focus:border-indigo-500 text-gray-700"
                                 required
                             />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 text-gray-500 hover:text-gray-700"
-                            >
-                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                            </button>
                         </div>
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="w-full bg-indigo-600 text-white py-2 rounded font-semibold hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                        {isSubmitting ? "Creating Account..." : "Create Account"}
-                    </button>
-                </form>
+                        <div>
+                            <label className="block text-gray-700 mb-2">Username</label>
+                            <input
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                className="w-full border-2 border-gray-200 px-4 py-2 rounded-lg focus:border-indigo-500 text-gray-700"
+                                required
+                            />
+                        </div>
 
-                <p className="text-center text-gray-500 mt-4 text-sm">
-                    Already have an account?{" "}
-                    <span
-                        onClick={() => router.push("/login")}
-                        className="text-indigo-600 font-medium cursor-pointer hover:underline"
-                    >
-                        Sign in
-                    </span>
-                </p>
+                        <div>
+                            <label className="block text-gray-700 mb-2">Password</label>
+                            <div className="relative flex items-center">
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full border border-gray-300 rounded px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-700"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 text-gray-500 hover:text-gray-700"
+                                >
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
+                            </div>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:-translate-y-1 transition-all shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            {isSubmitting ? "Creating Account..." : "Create Account"}
+                        </button>
+                    </form>
+
+                    <p className="text-center text-gray-500 text-sm mt-6">
+                        Already have an account?{" "}
+                        <span
+                            className="text-indigo-600 font-semibold cursor-pointer hover:underline"
+                            onClick={() => router.push("/login")}
+                        >
+                            Sign in
+                        </span>
+                    </p>
+                </div>
             </div>
         </div>
     );
 }
-
-export default RegisterPage;
