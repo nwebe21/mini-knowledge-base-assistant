@@ -31,10 +31,9 @@ export async function POST(req: NextRequest) {
         let context = "";
         let sources: Array<any> = [];
         let answer: string | null = null;
+        let messagesForPrompt: Array<any> = [];
 
-        if (isGreeting) {
-            answer = getGreetingResponse(question);
-        } else {
+        if (!isGreeting) {
             const embeddings = await embedText([question]);
             const index = getIndex();
             const query = await index.query({
@@ -50,11 +49,11 @@ export async function POST(req: NextRequest) {
                 new Set(query.matches?.map((match) => match.metadata?.source_url).filter(Boolean))
             );
 
-            const messagesForPrompt = [
+            messagesForPrompt = [
                 {
                     role: "system",
                     content:
-                        "You are a helpful travel assistant. Strictly cite sources from the RAG context only. If unknown, say: 'I checked the available sources in the knowledge base, but none of them contain information that directly answers your question. If its a greeting, respond with a greetings and ask how you can help.'",
+                        "You are a helpful travel assistant. Strictly cite sources from the RAG context only. If unknown, say: 'I checked the available sources in the knowledge base, but none of them contain information that directly answers your question'.",
                 },
 
                 ...(history || []).map((h) => ({
@@ -67,16 +66,24 @@ export async function POST(req: NextRequest) {
                     content: `${question}\n\nRAG Sources:\n${context}`,
                 },
             ];
-
-            const completion = await openai.chat.completions.create({
-                model: "gpt-4o-mini",
-                messages: messagesForPrompt,
-            });
-
-            answer = completion.choices[0].message.content;
+        } else {
+            messagesForPrompt = [
+                {
+                    role: 'system',
+                    content: "Its a greetings, respond with a greetings and ask how can you help."
+                }
+            ]
         }
 
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: messagesForPrompt,
+        });
+
+        answer = completion.choices[0].message.content;
+
         const noAnswerFlag = answer?.includes('none of them contain information that directly answers your question');
+        const sanitizedAnswer = answer ? removeInlineSources(answer) : answer;
 
         // Store both user and assistant messages (table has only session_id, content, sources)
         const { error: insertError } = await supabase.from("chat_messages").insert([
@@ -89,9 +96,9 @@ export async function POST(req: NextRequest) {
             {
                 session_id: currentSessionId,
                 user_id: user.id,
-                content: answer,
+                content: sanitizedAnswer,
                 role: 'assistant',
-                sources: noAnswerFlag ? [] : sources
+                sources: noAnswerFlag || isGreeting ? [] : sources
             }
         ]);
 
@@ -147,7 +154,7 @@ export async function GET(req: NextRequest) {
 }
 
 function isPureGreeting(text: string) {
-    const greetings = ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", 'how are you'];
+    const greetings = ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", 'how are you', "good day"];
 
     // Lowercase, trim, and remove punctuation
     const cleaned = text.toLowerCase().trim().replace(/[.,!?]/g, "");
@@ -156,10 +163,6 @@ function isPureGreeting(text: string) {
     return greetings.includes(cleaned);
 }
 
-function getGreetingResponse(question: string) {
-    const cleaned = question.toLowerCase().trim();
-    if (cleaned.includes("morning")) return "Good morning! How can I help plan your travels today?";
-    if (cleaned.includes("afternoon")) return "Good afternoon! What destination can I help you explore?";
-    if (cleaned.includes("evening")) return "Good evening! Ready to plan your next adventure?";
-    return "Hello! How can I help with your travel plans?";
+function removeInlineSources(text: string) {
+    return text.replace(/\s*\(Source\s*\d+\)/gi, "");
 }

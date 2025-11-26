@@ -44,9 +44,9 @@ export default function ChatPage() {
   }, [router, supabase]);
 
   useEffect(() => {
-    if (!user) return; // wait for user context to load
+    if (!userId) return; // wait for user context to load
     fetchSessions();
-  }, [user]);
+  }, [userId]);
 
   useEffect(() => {
     if (!messagesEndRef.current) return;
