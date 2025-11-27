@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import FormatText from "./FormatText";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { Trash2 } from "lucide-react";
 
 interface Message {
   id: string;
@@ -401,7 +402,7 @@ export default function ChatPage() {
       <div className="relative flex-1 flex flex-col overflow-hidden">
         {/* Chat Header */}
         <div className="bg-white flex justify-between items-center p-4 border-b border-gray-200 shadow-sm z-10">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             {/* Sidebar toggle button for mobile */}
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -415,20 +416,22 @@ export default function ChatPage() {
             <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-2xl">
               🤖
             </div>
-            <div>
-              <h2 className="font-bold text-gray-900 text-lg max-w-xs truncate">{chatSessions.find(s => s.id === activeSessionId)?.title || 'New Chat'}</h2>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-bold text-gray-900 text-lg truncate whitespace-nowrap">{chatSessions.find(s => s.id === activeSessionId)?.title || 'New Chat'}</h2>
               <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
                 <span>AI Travel Assistant</span>
               </div>
             </div>
           </div>
-          <button
-            onClick={() => handleDeleteSession(activeSessionId ?? undefined)}
-            className="bg-red-100 text-red-600 py-1 px-2 md:px-3 rounded font-medium hover:bg-red-200 transition whitespace-nowrap text-xs md:text-sm flex items-center justify-center"
-          >
-            <span className="md:hidden text-lg">🗑️</span>
-            <span className="hidden md:inline">Delete Chat</span>
-          </button>
+          { activeSessionId &&
+            <button
+              onClick={() => handleDeleteSession(activeSessionId ?? undefined)}
+              className="bg-red-100 text-red-600 py-1 px-2 md:px-3 rounded font-medium hover:bg-red-200 transition whitespace-nowrap text-xs md:text-sm flex items-center justify-center ml-4 md:ml-6"
+            >
+              <Trash2 className="md:hidden w-5 h-5" />
+              <span className="hidden md:inline">Delete Chat</span>
+            </button>
+          }
         </div>
 
         {/* Messages */}
