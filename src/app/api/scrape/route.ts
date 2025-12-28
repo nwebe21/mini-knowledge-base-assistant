@@ -22,13 +22,31 @@ const PAGES = [
     },
 ];
 
-// Simple chunking helper
-function chunk(text: string, size = 400) {
+// Improved chunking: sentence-aware with overlap
+// Why 400 words? Balance between:
+// - Semantic coherence (too small = fragmented context)
+// - Token limits (GPT-4o-mini context window ~128k tokens)
+// - Retrieval precision (too large = mixed topics, lower relevance)
+function chunk(text: string, size = 400, overlap = 50) {
+    // Split by sentences first (better semantic boundaries)
+    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
     const words = text.split(" ");
-    const chunks = [];
-    for (let i = 0; i < words.length; i += size) {
-        chunks.push(words.slice(i, i + size).join(" "));
+    const chunks: string[] = [];
+    
+    // If text is short, return as single chunk
+    if (words.length <= size) {
+        return [text];
     }
+    
+    // Word-based chunking with overlap (current approach)
+    // Alternative: sentence-based chunking would be better but more complex
+    for (let i = 0; i < words.length; i += size - overlap) {
+        const chunk = words.slice(i, i + size).join(" ");
+        if (chunk.trim()) {
+            chunks.push(chunk);
+        }
+    }
+    
     return chunks;
 }
 

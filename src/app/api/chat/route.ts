@@ -36,6 +36,12 @@ export async function POST(req: NextRequest) {
         if (!isGreeting) {
             const embeddings = await embedText([question]);
             const index = getIndex();
+            // Why topK = 5?
+            // - Balance: Too few (1-2) = might miss relevant info
+            //            Too many (10+) = noise, token waste, lower relevance
+            // - 5 chunks × ~400 words = ~2000 words of context (manageable)
+            // - Common RAG default, good for most queries
+            // Consider: Make configurable (3-7) based on query complexity
             const query = await index.query({
                 vector: embeddings[0],
                 topK: 5,
